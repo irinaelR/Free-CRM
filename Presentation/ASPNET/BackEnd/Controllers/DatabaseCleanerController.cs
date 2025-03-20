@@ -19,7 +19,7 @@ namespace ASPNET.BackEnd.Controllers
 
         [HttpPost("WipeDatabase")]
         public async Task<ActionResult<string>> WipeDatabase(
-            [FromQuery] bool includeDemoData    
+            [FromQuery] bool includeDemoData = false  
         )
         {
             try

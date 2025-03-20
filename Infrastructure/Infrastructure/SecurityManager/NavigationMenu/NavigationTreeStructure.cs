@@ -252,6 +252,18 @@ public static class NavigationTreeStructure
                     "IsModule": false
                 }
             ]
+        },
+        {
+            "URL": "#",
+            "Name": "Database Reset",
+            "IsModule": true,
+            "Children": [
+                {
+                    "URL": "/DbSettings/Reset",
+                    "Name": "Reset DB or Import CSV",
+                    "IsModule": false
+                }
+            ]
         }
     ]
     """;

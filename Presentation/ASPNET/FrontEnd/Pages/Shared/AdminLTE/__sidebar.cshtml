@@ -51,14 +51,16 @@
                 const childMenus = menuData.filter(menu => {
                     if (menu.navURL) {
                         const firstSegment = menu.navURL.split('/')[1];
-                        return userRoles.some(role => role.toLowerCase() === firstSegment.toLowerCase());
+                        return true;
+                        // return userRoles.some(role => role.toLowerCase() === firstSegment.toLowerCase());
                     }
                     return false;
                 });
 
                 const validChildIds = new Set(childMenus.map(menu => menu.id));
                 const parentIds = new Set(childMenus.map(menu => menu.pid));
-                return menuData.filter(menu => validChildIds.has(menu.id) || parentIds.has(menu.id));
+                const finalMenu = menuData.filter(menu => validChildIds.has(menu.id) || parentIds.has(menu.id));
+                return finalMenu;
             }
 
             function updateMenuSelection(menuData, segment) {
