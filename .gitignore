@@ -1,2 +1,7 @@
 ﻿.vs/
 obj/
+
+**/*.dll
+**/*.pdb
+**/*.exe
+**/Debug/*
