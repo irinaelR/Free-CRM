@@ -4,21 +4,67 @@
             fileData: null,
             delimiter: ',',
             dateFormat: 'yyyy-MM-dd',
+            tableRecordName: '',
+            tableRecordListLookupData: [],
+            uploadedData: [],
+            isSubmitting: {
+                reset: false,
+                generate: false,
+                upload: false,
+                confirm: false,
+            },
         });
 
         const fileUploadRef = Vue.ref(null);
+        const tableRecordIdRef = Vue.ref(null);
+
+        const tableRecordListLookup = {
+            obj: null,
+            create: () => {
+                if (state.tableRecordListLookupData.data && Array.isArray(state.tableRecordListLookupData.data)) {
+                    tableRecordListLookup.obj = new ej.dropdowns.DropDownList({
+                        dataSource: state.tableRecordListLookupData.data,
+                        fields: { value: 'name', text: 'name' },
+                        placeholder: 'Select the corresponding table',
+                        popupHeight: '200px',
+                        change: (e) => {
+                            state.tableRecordName = e.value;
+                        }
+                    });
+                    tableRecordListLookup.obj.appendTo(tableRecordIdRef.value);
+                } else {
+                    console.log(state.tableRecordListLookupData.data);
+                    console.log(Array.isArray(state.tableRecordListLookupData.data));
+                    console.error('Record Maps list lookup data is not available or invalid.');
+                }
+            },
+            refresh: () => {
+                if (tableRecordListLookup.obj) {
+                    tableRecordListLookup.obj.value = state.tableRecordName;
+                }
+            },
+        };
+
 
         Vue.onMounted(async () => {
             Dropzone.autoDiscover = false;
             try {
                 initDropzone();
-
+                await methods.populateRecordMapsListLookup();
+                tableRecordListLookup.create();
             } catch (e) {
                 console.error('page init error:', e);
             } finally {
 
             }
         });
+
+        Vue.watch(
+            () => state.tableRecordName,
+            (newVal, oldVal) => {
+                tableRecordListLookup.refresh();
+            }
+        );
 
         let dropzoneInitialized = false;
         const initDropzone = () => {
@@ -41,6 +87,17 @@
                 });
             }
         };
+
+        const methods = {
+            populateRecordMapsListLookup: async function () {
+                try {
+                    const list = await services.getRecordMaps();
+                    state.tableRecordListLookupData = list;
+                } catch (err) {
+                    throw err;
+                }
+            },
+        }
 
         const services = {
             wipeDatabase: async (includeDemoData) => {
@@ -73,11 +130,28 @@
                 } catch (err) {
                     throw err;
                 }
+            },
+            getRecordMaps: async () => {
+                try {
+                    const response = await AxiosManager.get('Csv/GetRecords');
+                    return response;
+                } catch (err) {
+                    throw err;
+                }
+            },
+            reseed: async () => {
+                try {
+                    const response = await AxiosManager.get('DatabaseCleaner/RepopulateDatabase');
+                    return response;
+                } catch (err) {
+                    throw err;
+                }
             }
         };
 
         const handler = {
             handleWipe: async function () {
+                state.isSubmitting.reset = true;
                 try {
                     const response = await services.wipeDatabase(false);
                     Swal.fire({
@@ -87,16 +161,46 @@
                         timer: 2000,
                         showConfirmButton: false
                     });
+                    state.isSubmitting.reset = false;
+
                 } catch (err) {
                     Swal.fire({
                         icon: 'error',
-                        title: state.deleteMode ? 'Delete Failed' : 'Save Failed',
-                        text: response.data.message ?? 'Please check your data.',
+                        title:  'Database reset failed',
+                        text: err.message ?? 'Please check your data.',
                         confirmButtonText: 'Try Again'
                     });
+                    state.isSubmitting.reset = false;
+
+                }
+            },
+            handleReseed: async function () {
+                state.isSubmitting.reseed = true;
+                try {
+                    const response = await services.reseed();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Data generated successfully',
+                        text: 'Form will be closed...',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    state.isSubmitting.reseed = false;
+
+                } catch (err) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Data generation failed',
+                        text: err.message ?? 'Please check your data.',
+                        confirmButtonText: 'Try Again'
+                    });
+                    state.isSubmitting.reseed = false;
+
                 }
             },
             handleFileUpload: async function () {
+                state.isSubmitting.upload = true;
+
                 try {
                     const uploadResponse = await services.uploadFile(state.fileData);
                     const fileName = uploadResponse.data?.content?.documentName;
@@ -109,14 +213,25 @@
                         trimFields: true
                     };
                     const readResponse = await services.processFile(options);
-                    console.log(readResponse);
+                    const dataToStore = {
+                        recordName: state.tableRecordName,
+                        data: readResponse.data,
+                    };
+                    state.uploadedData.push(dataToStore);
+                    // console.log(state.uploadedData);
+
+                    state.isSubmitting.upload = false;
+
                 } catch (err) {
                     Swal.fire({
                         icon: 'error',
                         title: state.deleteMode ? 'Delete Failed' : 'Save Failed',
-                        text: response.data.message ?? 'Please check your data.',
+                        text: err.message ?? 'Please check your data.',
                         confirmButtonText: 'Try Again'
                     });
+
+                    state.isSubmitting.upload = false;
+
                 }
             }
         };
@@ -125,6 +240,7 @@
             handler,
             state,
             fileUploadRef,
+            tableRecordIdRef,
         };
     }
 

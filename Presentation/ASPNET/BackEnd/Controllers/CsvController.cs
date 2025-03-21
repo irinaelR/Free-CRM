@@ -1,4 +1,7 @@
 ﻿using Domain.Common;
+using Domain.CsvTypes.Maps;
+using Domain.CsvTypes.Records;
+using Domain.Entities;
 using Infrastructure.CsvManager;
 using Infrastructure.DataAccessManager.EFCore.Contexts;
 using Microsoft.AspNetCore.Mvc;
@@ -26,10 +29,27 @@ namespace ASPNET.BackEnd.Controllers
         {
             try
             {
-                var records = _csvService.ProcessCsv<CsvRecord, CsvRecordMap>(options, _webHost);
+                var records = _csvService.ProcessCsv<ResultatsRecord, ResultatRecordMap>(options, _webHost);
+                //_dataContext.Tax.AddRange(records);
+                //_dataContext.SaveChanges();
                 return Ok(records);
             }
             catch (Exception ex) 
+            {
+                return BadRequest(ex.Message);
+            }
+
+        }
+
+        [HttpGet("GetRecords")]
+        public ActionResult<string> GetRecordsWithMaps()
+        {
+            try
+            {
+                var records = _csvService.GetRecordsWithMaps();
+                return Ok(records);
+            }
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
