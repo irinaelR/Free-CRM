@@ -3,29 +3,46 @@
     ViewData["Title"] = "Expense List";
 }
 
-<div id="app">
-    <div class="row">
-        <div class="col-2">
-            <p>
-                Only the system data (admin login, unit measures...) will be kept.
-            </p>
-            <button type="button"
-                    class="btn btn-danger"
-                    v-on:click="handler.handleWipe">
-                Empty the database
-            </button>
+<div id="app" class="row justify-content-around px-3">
+    <div class="col-4">
+        <h2>Database  reset</h2>
+        <p>
+            Only the system data (admin login, unit measures...) will be kept. The rest will be deleted.
+        </p>
+        <button type="button"
+                class="btn btn-danger"
+                v-on:click="handler.handleWipe">
+            Empty the database
+        </button>
+    </div>
+    <div class="col-4 form">
+        <h2>Data upload via CSV</h2>
+        <div class="mb-2 d-flex flex-row align-items-center">
+            <label for="delimiter" class="mr-2">CSV delimiter</label>
+            <select name="delimiter" id="delimiter" v-model="state.delimiter">
+                <option value=";">Semicolon (;)</option>
+                <option value=",">Commas (,)</option>
+            </select>
         </div>
-        <div class="col-2">
-            <form enctype="multipart/form-data">
-                <div>
-                    <label for="file">Choose a CSV file:</label>
-                    <input type="file" id="file" name="file">
-                </div>
-                <div>
-                    <button type="button" v-on:click="handler.uploadCsv">Upload</button>
-                </div>
-            </form>
+        <div class="mb-2 d-flex flex-row align-items-center">
+            <label class="mr-2">Dates format</label>
+            <input type="text" name="dateFormat" id="dateFormat" v-model="state.dateFormat" />
         </div>
+        <form ref="fileUploadRef" id="FileUpload" class="dropzone"></form>
+        <button type="button"
+                class="btn btn-info my-2"
+                v-on:click="handler.handleFileUpload">
+            Confirm upload
+        </button>
+        @* <form enctype="multipart/form-data"> *@
+        @*     <div> *@
+        @*         <label for="file">Choose a CSV file:</label> *@
+        @*         <input type="file" id="file" name="file"> *@
+        @*     </div> *@
+        @*     <div> *@
+        @*         <button type="button" v-on:click="handler.uploadCsv">Upload</button> *@
+        @*     </div> *@
+        @* </form> *@
     </div>
 </div>
 

@@ -1,13 +1,69 @@
 ﻿const App = {
     setup() {
+        const state = Vue.reactive({
+            fileData: null,
+            delimiter: ',',
+            dateFormat: 'yyyy-MM-dd',
+        });
+
+        const fileUploadRef = Vue.ref(null);
+
+        Vue.onMounted(async () => {
+            Dropzone.autoDiscover = false;
+            try {
+                initDropzone();
+
+            } catch (e) {
+                console.error('page init error:', e);
+            } finally {
+
+            }
+        });
+
+        let dropzoneInitialized = false;
+        const initDropzone = () => {
+            if (!dropzoneInitialized && fileUploadRef.value) {
+                dropzoneInitialized = true;
+                const dropzoneInstance = new Dropzone(fileUploadRef.value, {
+                    url: "api/FileDocument/UploadDocument",
+                    paramName: "file",
+                    maxFilesize: 5,
+                    acceptedFiles: "text/csv",
+                    addRemoveLinks: true,
+                    dictDefaultMessage: "Drag and drop a CSV file here to upload",
+                    autoProcessQueue: false,
+                    init: function () {
+                        this.on("addedfile", async function (file) {
+                            state.fileData = file;
+                            console.log(state.fileData);
+                        });
+                    }
+                });
+            }
+        };
+
         const services = {
             wipeDatabase: async (includeDemoData) => {
                 try {
-                    console.log(AxiosManager);
+                    // console.log(AxiosManager);
                     const response = await AxiosManager.post(`/DatabaseCleaner/WipeDatabase?includeDemoData=${includeDemoData}`);
                     return response;
                 } catch (error) {
                     throw error;
+                }
+            },
+            uploadFile: async (file) => {
+                const formData = new FormData();
+                formData.append('file', file);
+                try {
+                    const response = await AxiosManager.post('FileDocument/UploadDocument', formData, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    });
+                    return response;
+                } catch (err) {
+                    throw err;
                 }
             }
         };
@@ -31,11 +87,26 @@
                         confirmButtonText: 'Try Again'
                     });
                 }
+            },
+            handleFileUpload: async function () {
+                try {
+                    const response = await services.uploadFile(state.fileData);
+                    console.log(response);
+                } catch (err) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: state.deleteMode ? 'Delete Failed' : 'Save Failed',
+                        text: response.data.message ?? 'Please check your data.',
+                        confirmButtonText: 'Try Again'
+                    });
+                }
             }
         };
 
         return {
             handler,
+            state,
+            fileUploadRef,
         };
     }
 
