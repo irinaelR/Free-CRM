@@ -35,7 +35,7 @@
                     init: function () {
                         this.on("addedfile", async function (file) {
                             state.fileData = file;
-                            console.log(state.fileData);
+                            // console.log(state.fileData);
                         });
                     }
                 });
@@ -65,6 +65,14 @@
                 } catch (err) {
                     throw err;
                 }
+            },
+            processFile: async (options) => {
+                try {
+                    const response = await AxiosManager.post('Csv/ReadFile', options);
+                    return response;
+                } catch (err) {
+                    throw err;
+                }
             }
         };
 
@@ -90,8 +98,18 @@
             },
             handleFileUpload: async function () {
                 try {
-                    const response = await services.uploadFile(state.fileData);
-                    console.log(response);
+                    const uploadResponse = await services.uploadFile(state.fileData);
+                    const fileName = uploadResponse.data?.content?.documentName;
+
+                    const options = {
+                        fileName: fileName,
+                        delimiter: state.delimiter,
+                        dateTimeFormat: state.dateFormat,
+                        hasHeaderRecord: true,
+                        trimFields: true
+                    };
+                    const readResponse = await services.processFile(options);
+                    console.log(readResponse);
                 } catch (err) {
                     Swal.fire({
                         icon: 'error',
