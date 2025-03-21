@@ -13,6 +13,7 @@ namespace Domain.CsvTypes.Maps
         public TaxRecordMap() 
         {
             Map(t => t.Name).Name("Name");
+            Map(t => t.Id).Name("Id");
             Map(t => t.Description).Name("Description");
             Map(t => t.Percentage).Name("Percentage");
         }

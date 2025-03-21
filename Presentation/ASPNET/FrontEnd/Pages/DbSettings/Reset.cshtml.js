@@ -17,6 +17,7 @@
 
         const fileUploadRef = Vue.ref(null);
         const tableRecordIdRef = Vue.ref(null);
+        const uploadedDataListViewRef = Vue.ref(null);
 
         const tableRecordListLookup = {
             obj: null,
@@ -45,7 +46,6 @@
             },
         };
 
-
         Vue.onMounted(async () => {
             Dropzone.autoDiscover = false;
             try {
@@ -66,6 +66,7 @@
             }
         );
 
+
         let dropzoneInitialized = false;
         const initDropzone = () => {
             if (!dropzoneInitialized && fileUploadRef.value) {
@@ -73,7 +74,7 @@
                 const dropzoneInstance = new Dropzone(fileUploadRef.value, {
                     url: "api/FileDocument/UploadDocument",
                     paramName: "file",
-                    maxFilesize: 5,
+                    maxFilesize: 1,
                     acceptedFiles: "text/csv",
                     addRemoveLinks: true,
                     dictDefaultMessage: "Drag and drop a CSV file here to upload",
@@ -146,6 +147,14 @@
                 } catch (err) {
                     throw err;
                 }
+            },
+            saveAll: async () => {
+                try {
+                    const response = await AxiosManager.post('Csv/Persist', state.uploadedData);
+                    return response;
+                } catch (err) {
+                    throw err;
+                }
             }
         };
 
@@ -200,17 +209,16 @@
             },
             handleFileUpload: async function () {
                 state.isSubmitting.upload = true;
-
                 try {
                     const uploadResponse = await services.uploadFile(state.fileData);
                     const fileName = uploadResponse.data?.content?.documentName;
-
                     const options = {
                         fileName: fileName,
                         delimiter: state.delimiter,
                         dateTimeFormat: state.dateFormat,
                         hasHeaderRecord: true,
-                        trimFields: true
+                        trimFields: true,
+                        tableRecord: state.tableRecordName
                     };
                     const readResponse = await services.processFile(options);
                     const dataToStore = {
@@ -219,19 +227,61 @@
                     };
                     state.uploadedData.push(dataToStore);
                     // console.log(state.uploadedData);
-
                     state.isSubmitting.upload = false;
-
                 } catch (err) {
+                    console.error(err);
+                    // Extract the error message from the response
+                    let errorMessage = 'Please check your data.';
+
+                    if (err.response && err.response.data) {
+                        // API error responses are typically in err.response.data
+                        errorMessage = typeof err.response.data === 'string'
+                            ? err.response.data
+                            : err.response.data.message || err.message || errorMessage;
+                    } else if (err.message) {
+                        errorMessage = err.message;
+                    }
+
+                     //Extract the primary message (before the first period or colon)
+                    //const primaryMessage = errorMessage.split(/[\.:]/)[0].trim();
+                     
+                    const primaryMessage = `Mapping from CSV to ${state.tableRecordName} could not be performed. Please verify your data matches the entity.`;
+
+                    // Extract specific fields using regex
+                    const rowMatch = errorMessage.match(/Row:\s*(\d+)/);
+                    const columnMatch = errorMessage.match(/CurrentIndex:\s*(-?\d+)/);
+                    const fieldMatch = errorMessage.match(/MemberName:\s*([\w\d]+)/);
+
+                    const row = rowMatch ? rowMatch[1] : 'Unknown';
+                    const column = columnMatch ? columnMatch[1] : 'Unknown';
+                    const field = fieldMatch ? fieldMatch[1] : 'Unknown';
+
+                    const finalErrorMess = `Error: ${primaryMessage}\tRow: ${row}\tColumn: ${column}\tField: ${field}`;
+
                     Swal.fire({
                         icon: 'error',
-                        title: state.deleteMode ? 'Delete Failed' : 'Save Failed',
+                        title: `CSV conversion failed for ${state.tableRecordName}`,
+                        text: finalErrorMess,
+                        confirmButtonText: 'Try Again'
+                    });
+                    state.isSubmitting.upload = false;
+                }
+            },
+            handleSaveAll: async function () {
+                state.isSubmitting.confirm = true;
+                try {
+                    const response = await services.saveAll();
+                    console.log(response);
+;                } catch (err) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Data persistence failed',
                         text: err.message ?? 'Please check your data.',
                         confirmButtonText: 'Try Again'
                     });
-
-                    state.isSubmitting.upload = false;
-
+                    state.isSubmitting.reseed = false;
+                } finally {
+                    state.isSubmitting.confirm = false;
                 }
             }
         };

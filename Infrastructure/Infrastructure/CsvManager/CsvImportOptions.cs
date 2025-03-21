@@ -13,5 +13,6 @@ namespace Infrastructure.CsvManager
         public string DateTimeFormat { get; set; } = "yyyy-MM-dd"; // Default date format
         public bool HasHeaderRecord { get; set; } = true;
         public bool TrimFields { get; set; } = true;
+        public string TableRecord { get; set; }
     }
 }

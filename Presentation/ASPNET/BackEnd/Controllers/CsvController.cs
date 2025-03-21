@@ -1,4 +1,5 @@
-﻿using Domain.Common;
+﻿using ASPNET.BackEnd.Common.Models;
+using Domain.Common;
 using Domain.CsvTypes.Maps;
 using Domain.CsvTypes.Records;
 using Domain.Entities;
@@ -29,7 +30,8 @@ namespace ASPNET.BackEnd.Controllers
         {
             try
             {
-                var records = _csvService.ProcessCsv<ResultatsRecord, ResultatRecordMap>(options, _webHost);
+                var records = _csvService.ProcessCsvDynamic(options.TableRecord, options, _webHost, _dataContext);
+                // var records = _csvService.ProcessCsv<ResultatsRecord, ResultatRecordMap>(options, _webHost);
                 //_dataContext.Tax.AddRange(records);
                 //_dataContext.SaveChanges();
                 return Ok(records);
@@ -50,6 +52,21 @@ namespace ASPNET.BackEnd.Controllers
                 return Ok(records);
             }
             catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+        }
+
+        [HttpPost("Persist")]
+        public async Task<ActionResult<string>> PersistAllData([FromBody] List<RecordRequest> records)
+        {
+            try
+            {
+                await _csvService.SaveAll(records, _dataContext);
+                return Ok("ok");
+            }
+            catch (Exception ex) 
             {
                 return BadRequest(ex.Message);
             }
