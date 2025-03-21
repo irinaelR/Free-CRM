@@ -13,6 +13,7 @@
                 upload: false,
                 confirm: false,
             },
+            dropzone: null,
         });
 
         const fileUploadRef = Vue.ref(null);
@@ -49,7 +50,7 @@
         Vue.onMounted(async () => {
             Dropzone.autoDiscover = false;
             try {
-                initDropzone();
+                state.dropzone = initDropzone();
                 await methods.populateRecordMapsListLookup();
                 tableRecordListLookup.create();
             } catch (e) {
@@ -86,6 +87,7 @@
                         });
                     }
                 });
+                return dropzoneInstance;
             }
         };
 
@@ -228,6 +230,10 @@
                     state.uploadedData.push(dataToStore);
                     // console.log(state.uploadedData);
                     state.isSubmitting.upload = false;
+                    state.fileData = null;
+                    if (state.dropzone) {
+                        state.dropzone.removeAllFiles();
+                    }
                 } catch (err) {
                     console.error(err);
                     // Extract the error message from the response
@@ -271,7 +277,8 @@
                 state.isSubmitting.confirm = true;
                 try {
                     const response = await services.saveAll();
-                    console.log(response);
+                    state.uploadedData = [];
+                    // console.log(response);
 ;                } catch (err) {
                     Swal.fire({
                         icon: 'error',
