@@ -54,6 +54,8 @@ public class CreateExpenseHandler : IRequestHandler<CreateExpenseRequest, Create
 
     public async Task<CreateExpenseResult> Handle(CreateExpenseRequest request, CancellationToken cancellationToken = default)
     {
+        // if (request.Amount == 0) throw new Exception("Amount is zero");
+        
         var entity = new Expense
         {
             CreatedById = request.CreatedById,

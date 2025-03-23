@@ -168,7 +168,7 @@
                     Swal.fire({
                         icon: 'success',
                         title: 'Database reset successfull',
-                        text: 'Form will be closed...',
+                        text: 'Message will be closed...',
                         timer: 2000,
                         showConfirmButton: false
                     });
