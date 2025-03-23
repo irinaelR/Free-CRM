@@ -2,7 +2,8 @@ using Application.Common.Services.DatabaseCleaningManager;
 using ASPNET.BackEnd;
 using ASPNET.BackEnd.Common.Middlewares;
 using ASPNET.FrontEnd;
-using Infrastructure.AlertConfigManager;
+using Infrastructure.AlertManager;
+using Infrastructure.AlertManager.Checking;
 using Infrastructure.CsvManager;
 using Infrastructure.DatabaseCleaner;
 
@@ -19,6 +20,7 @@ builder.Services.AddBackEndServices(builder.Configuration);
 builder.Services.AddScoped<IDatabaseCleanerService,DatabaseCleanerService>();
 builder.Services.AddScoped<IAlertConfigService,AlertConfigService>();
 builder.Services.AddScoped<CsvService>();
+builder.Services.AddScoped<CheckBudgetExpenseService>();
 builder.Services.AddFrontEndServices();
 
 var app = builder.Build();

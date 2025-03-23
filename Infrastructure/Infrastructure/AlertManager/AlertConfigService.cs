@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure.AlertConfigManager
+namespace Infrastructure.AlertManager
 {
     public class AlertConfigService : IAlertConfigService
     {

@@ -1,4 +1,6 @@
-﻿using Infrastructure.AlertConfigManager;
+﻿using Domain.Entities;
+using Infrastructure.AlertManager;
+using Infrastructure.AlertManager.Checking;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ASPNET.BackEnd.Controllers
@@ -8,10 +10,12 @@ namespace ASPNET.BackEnd.Controllers
     public class AlertConfigController : ControllerBase
     {
         private readonly IAlertConfigService _alertConfigService;
+        private readonly CheckBudgetExpenseService _checkService;
 
-        public AlertConfigController(IAlertConfigService alertConfigService)
+        public AlertConfigController(IAlertConfigService alertConfigService, CheckBudgetExpenseService checkService)
         {
             _alertConfigService = alertConfigService;
+            _checkService = checkService;
         }
 
         [HttpPost("UpdateAlertConfig")]
@@ -52,5 +56,11 @@ namespace ASPNET.BackEnd.Controllers
                 return StatusCode(500, $"An error occurred while updating the alert configuration. {ex.Message}");
             }
         }
+
+        // [HttpGet("Test")]
+        // public List<Budget> GetAllConfirmed([FromQuery] string campaignId)
+        // {
+        //     return _checkService.GetAllConfirmed(campaignId);
+        // }
     }
 }
