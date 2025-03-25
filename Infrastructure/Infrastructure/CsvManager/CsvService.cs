@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using CsvHelper.TypeConversion;
 using System.Reflection;
 using System.Collections;
+using Domain.CsvTypes.Records;
+using Infrastructure.CsvManager.Errors;
 using Infrastructure.DataAccessManager.EFCore.Contexts;
 using Microsoft.EntityFrameworkCore;
 
@@ -130,7 +132,7 @@ namespace Infrastructure.CsvManager
         public List<object> ProcessCsvDynamic(string className, CsvImportOptions options, IWebHostEnvironment webHost, DataContext context)
         {
             // Resolve types
-            Type tRecordType = Type.GetType($"{_entitiesNamespace}.{className}, {_assembly}");
+            Type tRecordType = Type.GetType($"{_recordsNamespace}.{className}Record, {_assembly}");
             Type tMapType = Type.GetType($"{_mapsNamespace}.{className}RecordMap, {_assembly}");
 
             if (tRecordType == null || tMapType == null)
@@ -144,18 +146,22 @@ namespace Infrastructure.CsvManager
                 .MakeGenericMethod(tRecordType, tMapType);
 
             // Invoke method
-            var result = method.Invoke(this, new object[] { options, webHost, context });
+            var result = method.Invoke(this, new object[] { options, webHost });
 
             // return (List<object>)result;
             var specificList = result as IEnumerable;
             return specificList.Cast<object>().ToList();
         }
 
-        public List<TRecord> ProcessCsv<TRecord, TMap>(CsvImportOptions options, IWebHostEnvironment webHost, DataContext context)
+        public List<TRecord> ProcessCsv<TRecord, TMap>(CsvImportOptions options, IWebHostEnvironment webHost, List<IncompleteCampaignRecord>? campaignRecords)
     where TMap : ClassMap<TRecord>, new()
         {
             string docsFolder = GetDocsFolder(webHost);
-            var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture)
+            
+            var culture = new CultureInfo(CultureInfo.InvariantCulture.Name);
+            culture.NumberFormat.NumberDecimalSeparator = options.DecimalSeparator;
+            
+            var csvConfig = new CsvConfiguration(culture)
             {
                 HeaderValidated = null,
                 MissingFieldFound = null,
@@ -178,13 +184,76 @@ namespace Infrastructure.CsvManager
                 csv.Context.TypeConverterOptionsCache.GetOptions<DateTime>().Formats = conversionOptions.Formats;
                 csv.Context.TypeConverterOptionsCache.GetOptions<DateOnly>().Formats = dateOnlyConversionOptions.Formats;
             }
+            
+            List<TRecord> correctFormatData = new List<TRecord>();
+            
+            BadData badData = new BadData();
+            badData.FileName = options.FileRealName;
 
-            var records = csv.GetRecords<TRecord>().ToList();
+            // var records = csv.GetRecords<TRecord>().ToList();
+            try
+            {
+                while (csv.Read())
+                {
+                    try
+                    {
+                        var record = csv.GetRecord<TRecord>();
+                        var method = typeof(TRecord).GetMethod("CheckLogic", BindingFlags.Public | BindingFlags.Instance);
+                        object[] parameters = null;
+                        if (campaignRecords != null)
+                        {
+                            parameters = new object[] { campaignRecords };
+                        }
+                        else if (typeof(TRecord) == typeof(IncompleteCampaignRecord))
+                        {
+                            var incompleteCampaignRecords = correctFormatData
+                                .OfType<IncompleteCampaignRecord>()
+                                .ToList();
+                            parameters = new object[] { incompleteCampaignRecords };
+                        }
+                        
+                        if (method != null)
+                        {
+                            string isOkay = (string) method.Invoke(record, parameters);
+                    
+                            if (string.IsNullOrEmpty(isOkay))
+                            {
+                                correctFormatData.Add(record);
+                            }
+                            else
+                            {
+                                badData.Rows.Add(csv.Parser.Row, isOkay);
+                            }
+                        }
+                        else
+                        {
+                            // No CheckLogic method - add record by default
+                            correctFormatData.Add(record);
+                        }
+                    }
+                    catch (TypeConverterException ex)
+                    {
+                        badData.Rows.Add(csv.Parser.Row, "There was a formatting issue");
+                    }
+                    // catch (Exception ex)
+                    // {
+                    //     Console.WriteLine(ex.Message);
+                    //     badData.Rows.Add(csv.Parser.Row, ex.Message.Split("Exception:")[0]);
+                    // }
+                }
+            }
+            catch (HeaderValidationException ex)
+            {
+                // Handle header-related errors separately if needed
+                Console.WriteLine($"Header validation error: {ex.Message}");
+            }
 
-            var fkMappings = GenerateMappings<TRecord>();
-            //SetForeignKeys<TRecord>(records, csv, fkMappings, context); 
+            if (badData.Rows.Count > 0)
+            {
+                throw new CsvProcessException("There were errors during the csv processing.", badData);
+            }
 
-            return records;
+            return correctFormatData;
         }
 
         public static (string FkProperty, string CsvHeader, string ParentProperty, Type ParentType)[] GenerateMappings<TChild>()
@@ -216,54 +285,5 @@ namespace Infrastructure.CsvManager
             return mappings.ToArray();
         }
 
-        //public static void SetForeignKeys<TChild>(
-        //    List<TChild> childEntities,
-        //    CsvReader csvReader,
-        //    (string FkProperty, string CsvHeader, string ParentProperty, Type ParentType)[] mappings,
-        //    DataContext dbContext
-        //)
-        //{
-        //    var csvData = new List<Dictionary<string, string>>();
-        //    while (csvReader.Read())
-        //    {
-        //        var row = mappings.ToDictionary(m => m.CsvHeader, m => csvReader.GetField(m.CsvHeader));
-        //        csvData.Add(row);
-        //    }
-
-        //    if (csvData.Count - 1 != childEntities.Count)
-        //        throw new ArgumentException("CSV data count must match the number of child entities.");
-
-        //    foreach (var mapping in mappings)
-        //    {
-        //        var setMethod = typeof(DataContext).GetMethod(nameof(DataContext.Set), new Type[] { });
-        //        var parentSet = setMethod?.MakeGenericMethod(mapping.ParentType).Invoke(dbContext, null) as IQueryable;
-        //        if (parentSet == null)
-        //            throw new InvalidOperationException($"Could not retrieve DbSet for {mapping.ParentType.Name}");
-
-        //        for (int i = 0; i < childEntities.Count; i++)
-        //        {
-        //            var csvValue = csvData[i][mapping.CsvHeader];
-
-        //            // Find the parent entity
-        //            var parentEntity = parentSet.Cast<object>()
-        //                .FirstOrDefault(e => EF.Property<object>(e, mapping.ParentProperty).ToString() == csvValue);
-
-        //            if (parentEntity != null)
-        //            {
-        //                //// Set the FK on the child entity
-        //                var fkProperty = typeof(TChild).GetProperty(mapping.FkProperty);
-        //                if (fkProperty == null)
-        //                    throw new InvalidOperationException($"FK property {mapping.FkProperty} not found on {typeof(TChild).Name}");
-
-        //                //var parentKey = dbContext.Entry(parentEntity).Property("Id").CurrentValue; // Assuming primary key is 'Id'
-        //                fkProperty.SetValue(childEntities[i], parentEntity);
-        //            }
-        //            else
-        //            {
-        //                throw new InvalidOperationException($"Parent entity not found for value {csvValue} in {mapping.CsvHeader}");
-        //            }
-        //        }
-        //    }
-        //}
     }
 }

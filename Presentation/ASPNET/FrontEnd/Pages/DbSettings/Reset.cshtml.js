@@ -1,8 +1,11 @@
-﻿const App = {
+﻿
+const App = {
     setup() {
         const state = Vue.reactive({
-            fileData: null,
+            file1Data: null,
+            file2Data: null,
             delimiter: ',',
+            decimalDelimiter: ',',
             dateFormat: 'yyyy-MM-dd',
             tableRecordName: '',
             tableRecordListLookupData: [],
@@ -14,9 +17,11 @@
                 confirm: false,
             },
             dropzone: null,
+            wrongFileName: '',
         });
 
-        const fileUploadRef = Vue.ref(null);
+        const file1UploadRef = Vue.ref(null);
+        const file2UploadRef = Vue.ref(null);
         const tableRecordIdRef = Vue.ref(null);
         const uploadedDataListViewRef = Vue.ref(null);
 
@@ -51,8 +56,8 @@
             Dropzone.autoDiscover = false;
             try {
                 state.dropzone = initDropzone();
-                await methods.populateRecordMapsListLookup();
-                tableRecordListLookup.create();
+                // await methods.populateRecordMapsListLookup();
+                // tableRecordListLookup.create();
             } catch (e) {
                 console.error('page init error:', e);
             } finally {
@@ -70,24 +75,39 @@
 
         let dropzoneInitialized = false;
         const initDropzone = () => {
-            if (!dropzoneInitialized && fileUploadRef.value) {
+            if (!dropzoneInitialized && file1UploadRef.value && file2UploadRef.value) {
                 dropzoneInitialized = true;
-                const dropzoneInstance = new Dropzone(fileUploadRef.value, {
+                const dropzone1Instance = new Dropzone(file1UploadRef.value, {
                     url: "api/FileDocument/UploadDocument",
                     paramName: "file",
                     maxFilesize: 1,
                     acceptedFiles: "text/csv",
                     addRemoveLinks: true,
-                    dictDefaultMessage: "Drag and drop a CSV file here to upload",
+                    dictDefaultMessage: "Drag and drop a CSV file here to upload the Campaigns",
                     autoProcessQueue: false,
                     init: function () {
                         this.on("addedfile", async function (file) {
-                            state.fileData = file;
+                            state.file1Data = file;
                             // console.log(state.fileData);
                         });
                     }
                 });
-                return dropzoneInstance;
+                const dropzone2Instance = new Dropzone(file2UploadRef.value, {
+                    url: "api/FileDocument/UploadDocument",
+                    paramName: "file",
+                    maxFilesize: 1,
+                    acceptedFiles: "text/csv",
+                    addRemoveLinks: true,
+                    dictDefaultMessage: "Drag and drop a CSV file here to upload the Budgets and Expenses",
+                    autoProcessQueue: false,
+                    init: function () {
+                        this.on("addedfile", async function (file) {
+                            state.file2Data = file;
+                            // console.log(state.fileData);
+                        });
+                    }
+                });
+                return [dropzone1Instance, dropzone2Instance];
             }
         };
 
@@ -192,7 +212,7 @@
                     Swal.fire({
                         icon: 'success',
                         title: 'Data generated successfully',
-                        text: 'Form will be closed...',
+                        text: 'Message will be closed...',
                         timer: 2000,
                         showConfirmButton: false
                     });
@@ -211,65 +231,67 @@
             },
             handleFileUpload: async function () {
                 state.isSubmitting.upload = true;
+                state.wrongFileName = "";
+                state.uploadedData = [];
                 try {
-                    const uploadResponse = await services.uploadFile(state.fileData);
-                    const fileName = uploadResponse.data?.content?.documentName;
-                    const options = {
-                        fileName: fileName,
-                        delimiter: state.delimiter,
-                        dateTimeFormat: state.dateFormat,
-                        hasHeaderRecord: true,
-                        trimFields: true,
-                        tableRecord: state.tableRecordName
-                    };
+                    const upload1Response = await services.uploadFile(state.file1Data);
+                    const file1Name = upload1Response.data?.content?.documentName;
+
+                    const upload2Response = await services.uploadFile(state.file2Data);
+                    const file2Name = upload2Response.data?.content?.documentName;
+                    
+                    const options = [
+                        {
+                            fileName: file1Name,
+                            fileRealName: state.file1Data.name,
+                            delimiter: state.delimiter,
+                            dateTimeFormat: state.dateFormat,
+                            hasHeaderRecord: true,
+                            trimFields: true,
+                            tableRecord: state.tableRecordName,
+                            decimalSeparator: state.decimalDelimiter,
+                        },
+                        {
+                            fileName: file2Name,
+                            fileRealName: state.file2Data.name,
+                            delimiter: state.delimiter,
+                            dateTimeFormat: state.dateFormat,
+                            hasHeaderRecord: true,
+                            trimFields: true,
+                            tableRecord: state.tableRecordName,
+                            decimalSeparator: state.decimalDelimiter,
+                        },
+                    ];
                     const readResponse = await services.processFile(options);
-                    const dataToStore = {
-                        recordName: state.tableRecordName,
-                        data: readResponse.data,
-                    };
-                    state.uploadedData.push(dataToStore);
-                    // console.log(state.uploadedData);
-                    state.isSubmitting.upload = false;
+                    const cmpNb = readResponse.data[0].length;
+                    const budNb = readResponse.data[1].length;
+                    const expNb = readResponse.data[2].length;
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Data imported successfully',
+                        text: `Campaigns (${cmpNb}), Budgets (${budNb}), Expenses (${expNb})`,
+                        showConfirmButton: true
+                    });
+                    
                     state.fileData = null;
                     if (state.dropzone) {
-                        state.dropzone.removeAllFiles();
+                        state.dropzone[0].removeAllFiles();
+                        state.dropzone[1].removeAllFiles();
                     }
                 } catch (err) {
-                    console.error(err);
-                    // Extract the error message from the response
-                    let errorMessage = 'Please check your data.';
-
-                    if (err.response && err.response.data) {
-                        // API error responses are typically in err.response.data
-                        errorMessage = typeof err.response.data === 'string'
-                            ? err.response.data
-                            : err.response.data.message || err.message || errorMessage;
-                    } else if (err.message) {
-                        errorMessage = err.message;
-                    }
-
-                     //Extract the primary message (before the first period or colon)
-                    //const primaryMessage = errorMessage.split(/[\.:]/)[0].trim();
-                     
-                    const primaryMessage = `Mapping from CSV to ${state.tableRecordName} could not be performed. Please verify your data matches the entity.`;
-
-                    // Extract specific fields using regex
-                    const rowMatch = errorMessage.match(/Row:\s*(\d+)/);
-                    const columnMatch = errorMessage.match(/CurrentIndex:\s*(-?\d+)/);
-                    const fieldMatch = errorMessage.match(/MemberName:\s*([\w\d]+)/);
-
-                    const row = rowMatch ? rowMatch[1] : 'Unknown';
-                    const column = columnMatch ? columnMatch[1] : 'Unknown';
-                    const field = fieldMatch ? fieldMatch[1] : 'Unknown';
-
-                    const finalErrorMess = `Error: ${primaryMessage}\tRow: ${row}\tColumn: ${column}\tField: ${field}`;
+                    const message = err.response ? err.response.data.message : "Something went wrong.";
+                    const errorFileName = err.response ? err.response.data.rows.fileName : "unknown file";
+                    state.uploadedData = err.response ? err.response.data.rows.rows : [];
+                    state.wrongFileName = err.response ? err.response.data.rows.fileName : "unknown file";
 
                     Swal.fire({
                         icon: 'error',
-                        title: `CSV conversion failed for ${state.tableRecordName}`,
-                        text: finalErrorMess,
-                        confirmButtonText: 'Try Again'
+                        title: `CSV import failed for ${errorFileName}`,
+                        text: 'Please check the errors section for more details.',
+                        confirmButtonText: 'OK'
                     });
+                } finally {
                     state.isSubmitting.upload = false;
                 }
             },
@@ -296,7 +318,8 @@
         return {
             handler,
             state,
-            fileUploadRef,
+            file1UploadRef,
+            file2UploadRef,
             tableRecordIdRef,
         };
     }

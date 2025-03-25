@@ -17,17 +17,17 @@ public class CheckBudgetExpenseService
         _numberSequenceService = numberSequenceService;
     }
 
-    private double? GetAllConfirmedBudgets(string campaignId)
+    private double? GetAllConfirmedBudgets(string campaignId, DateTime maxDate)
     {
         return _context.Budget
-            .Where(x => x.CampaignId == campaignId && x.Status == BudgetStatus.Confirmed)
+            .Where(x => x.CampaignId == campaignId && x.BudgetDate <= maxDate && x.Status == BudgetStatus.Confirmed)
             .Sum(x => x.Amount);
     }
 
-    private double? GetAllConfirmedExpenses(string campaignId)
+    private double? GetAllConfirmedExpenses(string campaignId, DateTime maxDate)
     {
         return _context.Expense
-            .Where(x => x.CampaignId == campaignId && x.Status == ExpenseStatus.Confirmed)
+            .Where(x => x.CampaignId == campaignId && x.ExpenseDate <= maxDate && x.Status == ExpenseStatus.Confirmed)
             .Sum(x => x.Amount);
     }
 
@@ -36,11 +36,11 @@ public class CheckBudgetExpenseService
         return _context.AlertConfigs.Find("AC001");
     }
 
-    private bool CheckBudgetExpense(string? campaignId, double? newAmount)
+    private bool CheckBudgetExpense(string? campaignId, double? newAmount, DateTime maxDate)
     {
-        double? budget = GetAllConfirmedBudgets(campaignId);
+        double? budget = GetAllConfirmedBudgets(campaignId, maxDate);
         
-        double? expenses = GetAllConfirmedExpenses(campaignId);
+        double? expenses = GetAllConfirmedExpenses(campaignId, maxDate);
         expenses += newAmount;
         
         AlertConfig? config = GetAlertConfig();
@@ -51,6 +51,6 @@ public class CheckBudgetExpenseService
 
     public bool CheckBudgetExpenseRequest(CreateExpenseRequest request)
     {
-        return CheckBudgetExpense(request.CampaignId, request.Amount);
+        return CheckBudgetExpense(request.CampaignId, request.Amount, request.ExpenseDate ?? DateTime.UtcNow);
     }
 }
