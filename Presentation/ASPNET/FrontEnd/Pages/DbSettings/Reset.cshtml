@@ -39,14 +39,18 @@
                 </select>
             </div>
             <div class="mb-2 d-flex flex-row align-items-center">
+                <label for="delimiter" class="mr-2">Decimal delimiter</label>
+                <select name="delimiter" id="delimiter" v-model="state.decimalDelimiter">
+                    <option value=";">Point (.)</option>
+                    <option value=",">Commas (,)</option>
+                </select>
+            </div>
+            <div class="mb-2 d-flex flex-row align-items-center">
                 <label class="mr-2">Dates format</label>
                 <input type="text" name="dateFormat" id="dateFormat" v-model="state.dateFormat" />
             </div>
-            <div class="mb-2 d-flex flex-row align-items-center">
-                <label class="mr-2">Corresponding table</label>
-                <div ref="tableRecordIdRef"></div>
-            </div>
-            <form ref="fileUploadRef" id="FileUpload" class="dropzone"></form>
+            <form ref="file1UploadRef" id="FileUpload" class="dropzone"></form>
+            <form ref="file2UploadRef" id="FileUpload" class="dropzone"></form>
             <button type="button"
                     class="btn btn-info my-2"
                     v-on:click="handler.handleFileUpload">
@@ -56,19 +60,14 @@
             </button>
         </div>
         <div class="col-4">
-            <h2>List of Uploaded Records</h2>
+            <h2>List of errors</h2>
+            {{ state.wrongFileName }}
             <ul>
                 <li v-for="(item, index) in state.uploadedData" :key="index">
-                    {{ item.recordName }} ({{ item.data.length }} rows)
+                    Row {{ index }} : {{ item.toString() }}
                 </li>
             </ul>
-            <button type="button"
-                    class="btn btn-info my-2"
-                    v-on:click="handler.handleSaveAll">
-                <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting.confirm" role="status" aria-hidden="true"></span>
-
-                Save all to database
-            </button>
+            
         </div>
     </div>
 </div>
