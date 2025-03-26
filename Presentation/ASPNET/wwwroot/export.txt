@@ -1,0 +1,12 @@
+---CAMPAIGN---
+#70 copy;Big Launch 39;Description for campaign #70;400000;05/04/2023 00:00:00;22/01/2026 00:00:00;Confirmed;a1b5d3df-f550-4ba5-90e1-b2ac024bb783;False
+---BUDGET---
+000220250326BUD;Test budget;Description for Test budget;13/04/2024 00:00:00;Confirmed;1450000;False
+000620250326BUD;Sit 4;Description for Sit 4;05/05/2023 00:00:00;Confirmed;326083,3;False
+001820250326BUD;Plan 3;Description for Plan 3;24/06/2025 00:00:00;Confirmed;15350,36;False
+001120250326BUD;Amet 17;Description for Amet 17;22/08/2025 00:00:00;Confirmed;264916,4;False
+---EXPENSE---
+000220250326BUD;Test budget;Description for Test budget;13/04/2024 00:00:00;Confirmed;1450000;False
+000620250326BUD;Sit 4;Description for Sit 4;05/05/2023 00:00:00;Confirmed;326083,3;False
+001820250326BUD;Plan 3;Description for Plan 3;24/06/2025 00:00:00;Confirmed;15350,36;False
+001120250326BUD;Amet 17;Description for Amet 17;22/08/2025 00:00:00;Confirmed;264916,4;False

@@ -1,4 +1,5 @@
-﻿using Application.Common.Repositories;
+﻿using System.Runtime.InteropServices.JavaScript;
+using Application.Common.Repositories;
 using Application.Features.NumberSequenceManager;
 using Domain.CsvTypes.Records;
 using Domain.Entities;
@@ -36,7 +37,7 @@ public class DataImportService
                 Description = $"Description for campaign {record.Code}",
                 TargetRevenueAmount = 10000 * Math.Ceiling((random.NextDouble() * 89) + 1),
                 CampaignDateStart = earliestDate.AddMonths(-1),
-                CampaignDateFinish = latestDate.AddMonths(1),
+                CampaignDateFinish = latestDate.AddMonths(5),
                 Status = CampaignStatus.Confirmed,
                 SalesTeamId = GetRandomValue(salesTeamIds, random)
             };
@@ -121,12 +122,20 @@ public class DataImportService
     private DateTime GetEarliestDate(string campaignNumber, List<CampaignChildRecord> childRecords)
     {
         var filteredChildren = childRecords.Where(x => x.CampaignNumber == campaignNumber);
+        if (filteredChildren.Count() == 0)
+        {
+            return DateTime.UtcNow;
+        }
         return filteredChildren.OrderBy(x => x.Date).First().Date;
     }
 
     private DateTime GetLatestDate(string campaignNumber, List<CampaignChildRecord> childRecords)
     {
         var filteredChildren = childRecords.Where(x => x.CampaignNumber == campaignNumber);
+        if (filteredChildren.Count() == 0)
+        {
+            return DateTime.UtcNow.AddMonths(12);
+        }
         return filteredChildren.OrderByDescending(x => x.Date).First().Date;
     }
 }
