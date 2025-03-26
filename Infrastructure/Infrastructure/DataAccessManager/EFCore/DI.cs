@@ -3,6 +3,7 @@ using Application.Common.CQS.Queries;
 using Application.Common.Repositories;
 using Infrastructure.DataAccessManager.EFCore.Contexts;
 using Infrastructure.DataAccessManager.EFCore.Repositories;
+using Infrastructure.SeedManager;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -79,7 +80,11 @@ public static class DI
 
         // Create database using DataContext
         var dataContext = serviceProvider.GetRequiredService<DataContext>();
-        dataContext.Database.EnsureCreated(); // Ensure database is created (development only)
+        bool wasCreated = dataContext.Database.EnsureCreated(); // Ensure database is created (development only)
+        if (wasCreated)
+        {
+            host.SeedDemoData();
+        }
 
         return host;
     }

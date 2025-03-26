@@ -1,5 +1,6 @@
 ﻿using Application.Common.Repositories;
 using Application.Features.NumberSequenceManager;
+using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
 using FluentValidation;
@@ -54,6 +55,8 @@ public class CreateExpenseHandler : IRequestHandler<CreateExpenseRequest, Create
 
     public async Task<CreateExpenseResult> Handle(CreateExpenseRequest request, CancellationToken cancellationToken = default)
     {
+        // if (request.Amount == 0) throw new Exception("Amount is zero");
+        
         var entity = new Expense
         {
             CreatedById = request.CreatedById,
@@ -65,7 +68,7 @@ public class CreateExpenseHandler : IRequestHandler<CreateExpenseRequest, Create
             Amount = request.Amount,
             CampaignId = request.CampaignId
         };
-
+        
         await _repository.CreateAsync(entity, cancellationToken);
         await _unitOfWork.SaveAsync(cancellationToken);
 

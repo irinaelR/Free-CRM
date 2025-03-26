@@ -1,0 +1,78 @@
+﻿@page
+@{
+    ViewData["Title"] = "Expense List";
+}
+
+<div id="app" class="row justify-content-around px-3">
+    <div class="col-4 d-flex flex-column">
+        <div class="mb-2">
+            <h2>Database reset</h2>
+            <p>
+                Only the system data (admin login, unit measures...) will be kept. The rest will be deleted.
+            </p>
+            <button type="button"
+                    class="btn btn-danger"
+                    v-on:click="handler.handleWipe">
+                <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting.reset" role="status" aria-hidden="true"></span>
+                Empty the database
+            </button>
+        </div>
+        <div class="mb-2">
+            <h2>Regenerate demo data</h2>
+            <button type="button"
+                    class="btn btn-info"
+                    v-on:click="handler.handleReseed">
+                <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting.reseed" role="status" aria-hidden="true"></span>
+
+                Generate demo data
+            </button>
+        </div>
+    </div>
+    <div class="col-8 row">
+        <div class="col-4">
+            <h2>Data upload via CSV</h2>
+            <div class="mb-2 d-flex flex-row align-items-center">
+                <label for="delimiter" class="mr-2">CSV delimiter</label>
+                <select name="delimiter" id="delimiter" v-model="state.delimiter">
+                    <option value=";">Semicolon (;)</option>
+                    <option value=",">Commas (,)</option>
+                </select>
+            </div>
+            <div class="mb-2 d-flex flex-row align-items-center">
+                <label for="delimiter" class="mr-2">Decimal delimiter</label>
+                <select name="delimiter" id="delimiter" v-model="state.decimalDelimiter">
+                    <option value=";">Point (.)</option>
+                    <option value=",">Commas (,)</option>
+                </select>
+            </div>
+            <div class="mb-2 d-flex flex-row align-items-center">
+                <label class="mr-2">Dates format</label>
+                <input type="text" name="dateFormat" id="dateFormat" v-model="state.dateFormat" />
+            </div>
+            <form ref="file1UploadRef" id="FileUpload" class="dropzone"></form>
+            <form ref="file2UploadRef" id="FileUpload" class="dropzone"></form>
+            <button type="button"
+                    class="btn btn-info my-2"
+                    v-on:click="handler.handleFileUpload">
+                <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting.upload" role="status" aria-hidden="true"></span>
+
+                Confirm upload
+            </button>
+        </div>
+        <div class="col-8">
+            <h2>List of errors</h2>
+            {{ state.wrongFileName }}
+            <ul>
+                <li v-for="(item, index) in state.uploadedData" :key="index">
+                    Row {{ index }} : {{ item.toString() }}
+                </li>
+            </ul>
+            
+        </div>
+    </div>
+</div>
+
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/DbSettings/Reset.cshtml.js"></script>
+}

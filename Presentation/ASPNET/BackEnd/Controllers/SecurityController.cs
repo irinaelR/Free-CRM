@@ -2,6 +2,7 @@
 using Application.Features.SecurityManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;
+using Azure;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,14 +23,25 @@ public class SecurityController : BaseApiController
     [HttpPost("Login")]
     public async Task<ActionResult<ApiSuccessResult<LoginResult>>> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
-        var response = await _sender.Send(request, cancellationToken);
-
-        return Ok(new ApiSuccessResult<LoginResult>
+        try
         {
-            Code = StatusCodes.Status200OK,
-            Message = $"Success executing {nameof(LoginAsync)}",
-            Content = response
-        });
+            var response = await _sender.Send(request, cancellationToken);
+
+            return Ok(new ApiSuccessResult<LoginResult>
+            {
+                Code = StatusCodes.Status200OK,
+                Message = $"Success executing {nameof(LoginAsync)}",
+                Content = response
+            });
+        }
+        catch (Exception ex) 
+        {
+            return Ok(new ApiSuccessResult<LoginResult>
+            {
+                Code = StatusCodes.Status400BadRequest,
+                Message = $"{ex.Message}",
+            });
+        }
     }
 
     [AllowAnonymous]
