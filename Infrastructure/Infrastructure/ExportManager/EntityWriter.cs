@@ -92,14 +92,14 @@ public class EntityWriter
         List<string> budgetLines = new List<string>();
 
         budgetLines.Add("---EXPENSE---");
-        foreach (Budget b in ChildBudgets)
+        foreach (Expense b in ChildExpenses)
         {
             budgetLines.Add(string.Join(";", new string[]
             {
                 b.Number,
                 b.Title,
                 b.Description,
-                b.BudgetDate.ToString(),
+                b.ExpenseDate.ToString(),
                 (int)(b.Status ?? 0) + "",
                 b.Amount.ToString(),
                 b.IsDeleted.ToString()
