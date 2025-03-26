@@ -7,10 +7,10 @@ public class IncompleteCampaignRecord
 
     public string CheckLogic(List<IncompleteCampaignRecord> incompleteCampaignRecords)
     {
-        if (incompleteCampaignRecords.Select(c => c.Code).Contains(Code))
-        {
-            return "Campaign number is a duplicate.";
-        }
+        // if (incompleteCampaignRecords.Select(c => c.Code).Contains(Code))
+        // {
+        //     return "Campaign number is a duplicate.";
+        // }
 
         return "";
     }

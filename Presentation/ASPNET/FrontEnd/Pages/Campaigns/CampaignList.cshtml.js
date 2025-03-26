@@ -285,6 +285,14 @@
         );
 
         const services = {
+            sendDuplicateData: async () => {
+                try {
+                    const response = await AxiosManager.post('/ObjectCopy/Duplicate', state.id);
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
             getMainData: async () => {
                 try {
                     const response = await AxiosManager.get('/Campaign/GetCampaignList', {});
@@ -567,26 +575,27 @@
                         { text: 'Add', tooltipText: 'Add', prefixIcon: 'e-add', id: 'AddCustom' },
                         { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
                         { text: 'Delete', tooltipText: 'Delete', prefixIcon: 'e-delete', id: 'DeleteCustom' },
+                        { text: 'Duplicate', tooltipText: 'Duplicate', prefixIcon: 'e-copy', id: 'DuplicateCustom' },
                         { type: 'Separator' },
                     ],
                     beforeDataBound: () => { },
                     dataBound: function () {
-                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], false);
+                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'DuplicateCustom'], false);
                         mainGrid.obj.autoFitColumns(['number', 'title', 'campaignDateStart', 'campaignDateFinish', 'targetRevenueAmount', 'statusName', 'salesTeamName', 'createdAtUtc']);
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
                         if (mainGrid.obj.getSelectedRecords().length == 1) {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], true);
+                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'DuplicateCustom'], true);
                         } else {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], false);
+                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'DuplicateCustom'], false);
                         }
                     },
                     rowDeselected: () => {
                         if (mainGrid.obj.getSelectedRecords().length == 1) {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], true);
+                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'DuplicateCustom'], true);
                         } else {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], false);
+                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'DuplicateCustom'], false);
                         }
                     },
                     rowSelecting: () => {
@@ -605,6 +614,32 @@
                             resetFormState();
                             state.showComplexDiv = false;
                             mainModal.obj.show();
+                        }
+                        
+                        if(args.item.id === 'DuplicateCustom') {
+                            function downloadFile(content, fileName = 'output.txt') {
+                                const blob = new Blob([content], { type: 'text/plain' });
+                                const url = window.URL.createObjectURL(blob);
+
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = fileName;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+
+                                window.URL.revokeObjectURL(url);
+                            }
+                            state.deleteMode = false;
+                            if (mainGrid.obj.getSelectedRecords().length) {
+                                const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
+                                state.id = selectedRecord.id ?? '';
+                                const response = await services.sendDuplicateData();
+                                if(response.status === 200) {
+                                    const fileName = response.data;
+                                    downloadFile(fileName);
+                                }
+                            }
                         }
 
                         if (args.item.id === 'EditCustom') {

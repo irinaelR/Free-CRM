@@ -4,7 +4,7 @@
 }
 
 <div id="app" class="row justify-content-around px-3">
-    <div class="col-4 d-flex flex-column justify-content-between">
+    <div class="col-4 d-flex flex-column">
         <div class="mb-2">
             <h2>Database reset</h2>
             <p>
@@ -29,7 +29,7 @@
         </div>
     </div>
     <div class="col-8 row">
-        <div class="col-8">
+        <div class="col-4">
             <h2>Data upload via CSV</h2>
             <div class="mb-2 d-flex flex-row align-items-center">
                 <label for="delimiter" class="mr-2">CSV delimiter</label>
@@ -59,7 +59,7 @@
                 Confirm upload
             </button>
         </div>
-        <div class="col-4">
+        <div class="col-8">
             <h2>List of errors</h2>
             {{ state.wrongFileName }}
             <ul>
