@@ -16,8 +16,6 @@ public static class DI
         services.AddScoped<RoleSeeder>();
         services.AddScoped<UserAdminSeeder>();
         services.AddScoped<CompanySeeder>();
-        services.AddScoped<AlertConfigSeeder>();
-        services.AddScoped<SalesTeamSeeder>();
 
         return services;
     }
@@ -39,12 +37,6 @@ public static class DI
 
             var companySeeder = serviceProvider.GetRequiredService<CompanySeeder>();
             companySeeder.GenerateDataAsync().Wait();
-
-            var alertConfigSeeder = serviceProvider.GetRequiredService<AlertConfigSeeder>();
-            alertConfigSeeder.SeedAlertConfigAsync(context).Wait();
-            
-            var salesTeamSeeder = serviceProvider.GetRequiredService<SalesTeamSeeder>();
-            salesTeamSeeder.GenerateDataAsync().Wait();
 
         }
 
@@ -74,6 +66,7 @@ public static class DI
         services.AddScoped<PurchaseOrderSeeder>();
 
 
+        services.AddScoped<SalesTeamSeeder>();
         services.AddScoped<SalesRepresentativeSeeder>();
         services.AddScoped<CampaignSeeder>();
         services.AddScoped<BudgetSeeder>();
@@ -138,7 +131,8 @@ public static class DI
 
 
 
-            
+            var salesTeamSeeder = serviceProvider.GetRequiredService<SalesTeamSeeder>();
+            salesTeamSeeder.GenerateDataAsync().Wait();
 
             var salesRepresentativeSeeder = serviceProvider.GetRequiredService<SalesRepresentativeSeeder>();
             salesRepresentativeSeeder.GenerateDataAsync().Wait();

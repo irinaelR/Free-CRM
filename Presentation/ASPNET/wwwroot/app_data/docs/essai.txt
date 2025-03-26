@@ -1,2 +1,0 @@
----CAMPAIGN---
-#91 copy;Great Marketing 9;Description for campaign #91;160000;26/12/2022 00:00:00;23/05/2026 00:00:00;Confirmed;c8e4158b-e8b2-414b-9bfa-b2ac024bb783;False;;;;

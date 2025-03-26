@@ -57,7 +57,7 @@ public class TokenService : ITokenService
             issuer: _tokenSettings.Issuer,
             audience: _tokenSettings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMonths(1),
+            expires: DateTime.UtcNow.AddMinutes(_tokenSettings.ExpireInMinute),
             signingCredentials: creds
         );
 

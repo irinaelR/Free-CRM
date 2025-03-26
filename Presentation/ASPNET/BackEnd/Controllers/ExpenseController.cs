@@ -2,7 +2,6 @@
 using Application.Features.ExpenseManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;
-using Infrastructure.AlertManager.Checking;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,17 +11,8 @@ namespace ASPNET.BackEnd.Controllers;
 [Route("api/[controller]")]
 public class ExpenseController : BaseApiController
 {
-    private CheckBudgetExpenseService _checkBudgetExpenseService;
-    public ExpenseController(ISender sender, CheckBudgetExpenseService checkBudgetExpenseService) : base(sender)
+    public ExpenseController(ISender sender) : base(sender)
     {
-        _checkBudgetExpenseService = checkBudgetExpenseService;
-    }
-
-    [Authorize]
-    [HttpPost("CheckBudgetExpense")]
-    public bool CheckBudgetExpense(CreateExpenseRequest request)
-    {
-        return _checkBudgetExpenseService.CheckBudgetExpenseRequest(request);
     }
 
     [Authorize]
